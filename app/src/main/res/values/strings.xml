@@ -1,0 +1,7 @@
+<resources>
+    <string name="PetCare_App">PetCare App</string>
+    <string name="home">Home</string>
+    <string name="my_pets">My Pets</string>
+    <string name="appointments">Appointments</string>
+    <string name="reminders">Reminders</string>
+</resources>
