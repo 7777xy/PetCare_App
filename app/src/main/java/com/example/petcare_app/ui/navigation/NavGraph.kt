@@ -13,7 +13,7 @@ import com.example.petcare_app.ui.screens.ReminderScreen
 @Composable
 fun NavHostContainer(navController: NavHostController, modifier: Modifier = Modifier) {
     NavHost(navController = navController, startDestination = BottomNavItem.Home.route, modifier = modifier) {
-        composable(BottomNavItem.Home.route) { HomeScreen() }
+        composable(BottomNavItem.Home.route) { HomeScreen(navController = navController) }
         composable(BottomNavItem.MyPet.route) { MyPetScreen() }
         composable(BottomNavItem.Appointment.route) { AppointmentScreen() }
         composable(BottomNavItem.Reminder.route) { ReminderScreen() }
