@@ -125,7 +125,7 @@ fun HomeScreen(navController: NavHostController) {
                 }
             )
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // 4. Pending Reminders Section
             SectionCard(

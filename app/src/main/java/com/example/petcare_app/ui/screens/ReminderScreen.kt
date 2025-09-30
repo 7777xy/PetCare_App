@@ -9,7 +9,6 @@ import androidx.compose.ui.Modifier
 
 import androidx.navigation.NavHostController
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,7 +19,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
-import androidx.compose.ui.text.style.TextAlign
 
 
 data class Reminder(
@@ -37,11 +35,10 @@ fun ReminderScreen(navController: NavHostController) {
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text(
+            TopAppBar(title = {Text(
                 text = "Reminders",
                 style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.primary,
-                textAlign = TextAlign.Center) })
+                color = MaterialTheme.colorScheme.primary) })
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -54,7 +51,7 @@ fun ReminderScreen(navController: NavHostController) {
             }
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
+        Column(modifier = Modifier.padding(padding).padding(8.dp).fillMaxSize()) {
             if (reminders.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
