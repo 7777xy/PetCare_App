@@ -16,6 +16,6 @@ fun NavHostContainer(navController: NavHostController, modifier: Modifier = Modi
         composable(BottomNavItem.Home.route) { HomeScreen(navController = navController) }
         composable(BottomNavItem.MyPet.route) { MyPetScreen() }
         composable(BottomNavItem.Appointment.route) { AppointmentScreen() }
-        composable(BottomNavItem.Reminder.route) { ReminderScreen() }
+        composable(BottomNavItem.Reminder.route) { ReminderScreen(navController = navController) }
     }
 }
