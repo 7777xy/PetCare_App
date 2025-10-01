@@ -175,12 +175,12 @@ fun SectionCard(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = "• ", // Bullet point
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.primary // Optional: Color for bullet
                         )
                         Text(
                             text = item,
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurface // Main text color for items
                         )
                     }

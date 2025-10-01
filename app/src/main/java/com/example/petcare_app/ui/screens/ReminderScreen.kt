@@ -6,7 +6,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-
 import androidx.navigation.NavHostController
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.*
@@ -118,8 +117,9 @@ fun ReminderItem(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
-                Text(text = reminder.title, style = MaterialTheme.typography.titleMedium)
-                Text(text = reminder.date, style = MaterialTheme.typography.bodySmall)
+                Text(text = reminder.title, style = MaterialTheme.typography.titleLarge, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = reminder.date, style = MaterialTheme.typography.bodyLarge)
             }
             Row {
                 IconButton(onClick = { onEdit(reminder) }) {
