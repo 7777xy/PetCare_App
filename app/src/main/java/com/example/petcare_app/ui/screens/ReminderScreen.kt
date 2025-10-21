@@ -19,7 +19,13 @@ import androidx.compose.material3.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import com.example.petcare_app.viewmodel.ReminderViewModel
-
+import android.app.DatePickerDialog
+import android.widget.DatePicker
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.platform.LocalContext
+import java.util.Calendar
+import android.app.TimePickerDialog
+import android.widget.TimePicker
 
 
 
@@ -151,10 +157,41 @@ fun ReminderDialog(
     onSave: (Reminder) -> Unit
 ) {
     var title by remember { mutableStateOf(reminder?.title ?: "") }
-    var date by remember { mutableStateOf(reminder?.date ?: "") }
+
+    val context = LocalContext.current
+    val calendar = remember { Calendar.getInstance() }
+
+    // --- Date Picker ---
+    var dateText by remember { mutableStateOf(reminder?.date ?: "") }
+    val datePicker = remember {
+        DatePickerDialog(
+            context,
+            { _: DatePicker, year: Int, month: Int, dayOfMonth: Int ->
+                calendar.set(year, month, dayOfMonth)
+                dateText = "${year}-${month + 1}-${dayOfMonth}" // yyyy-MM-dd
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        )
+    }
+
+// --- Time Picker ---
+    var timeText by remember { mutableStateOf(reminder?.date?.substringAfter(" ", "") ?: "") } // store time separately
+    val timePicker = remember {
+        TimePickerDialog(
+            context,
+            { _: TimePicker, hour: Int, minute: Int ->
+                timeText = String.format("%02d:%02d", hour, minute) // HH:mm
+            },
+            calendar.get(Calendar.HOUR_OF_DAY),
+            calendar.get(Calendar.MINUTE),
+            true // 24-hour format
+        )
+    }
 
     AlertDialog(
-        onDismissRequest = { onDismiss() },
+        onDismissRequest = onDismiss,
         title = { Text(if (reminder == null) "Add Reminder" else "Edit Reminder") },
         text = {
             Column {
@@ -165,28 +202,40 @@ fun ReminderDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
+
                 OutlinedTextField(
-                    value = date,
-                    onValueChange = { date = it },
+                    value = dateText,
+                    onValueChange = {},
+                    readOnly = true,
                     label = { Text("Date") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { datePicker.show() }
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = timeText,
+                    onValueChange = {}, // read-only
+                    readOnly = true,
+                    label = { Text("Time") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { timePicker.show() }
+                )
+
             }
         },
         confirmButton = {
             Button(onClick = {
-                if (title.isNotBlank() && date.isNotBlank()) {
-                    onSave(Reminder(reminder?.id ?: 0, title, date))
+                if (title.isNotBlank() && dateText.isNotBlank()) {
+                    val combinedDateTime = if (timeText.isNotBlank()) "$dateText $timeText" else dateText
+                    onSave(Reminder(reminder?.id ?: 0, title, combinedDateTime))
                 }
-            }) {
-                Text("Save")
-            }
+            }) { Text("Save") }
         },
         dismissButton = {
-            OutlinedButton(onClick = { onDismiss() }) {
-                Text("Cancel")
-            }
+            OutlinedButton(onClick = onDismiss) { Text("Cancel") }
         }
-    )
-}
+    )}
 

@@ -14,6 +14,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.petcare_app.viewmodel.AppointmentViewModel
+import android.app.DatePickerDialog
+import android.widget.DatePicker
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.platform.LocalContext
+import java.util.Calendar
+import android.app.TimePickerDialog
+import android.widget.TimePicker
 
 // Data models
 data class Appointment(
@@ -196,9 +203,39 @@ fun AppointmentDialog(
     var vetName by remember { mutableStateOf(appointment?.vetName ?: "") }
     var clinicName by remember { mutableStateOf(appointment?.clinicName ?: "") }
     var address by remember { mutableStateOf(appointment?.address ?: "") }
-    var date by remember { mutableStateOf(appointment?.date ?: "") }
-    var time by remember { mutableStateOf(appointment?.time ?: "") }
     var type by remember { mutableStateOf(appointment?.type ?: "vet") }
+
+    val context = LocalContext.current
+    val calendar = remember { Calendar.getInstance() }
+
+    // --- Date Picker ---
+    var dateText by remember { mutableStateOf(appointment?.date ?: "") }
+    val datePicker = remember {
+        DatePickerDialog(
+            context,
+            { _: DatePicker, year: Int, month: Int, dayOfMonth: Int ->
+                calendar.set(year, month, dayOfMonth)
+                dateText = "${year}-${month + 1}-${dayOfMonth}" // yyyy-MM-dd
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        )
+    }
+
+// --- Time Picker ---
+    var timeText by remember { mutableStateOf(appointment?.time ?: "") }
+    val timePicker = remember {
+        TimePickerDialog(
+            context,
+            { _: TimePicker, hour: Int, minute: Int ->
+                timeText = String.format("%02d:%02d", hour, minute) // HH:mm
+            },
+            calendar.get(Calendar.HOUR_OF_DAY),
+            calendar.get(Calendar.MINUTE),
+            true // 24-hour format
+        )
+    }
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
@@ -211,9 +248,26 @@ fun AppointmentDialog(
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Address") }, modifier = Modifier.fillMaxWidth())
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(value = date, onValueChange = { date = it }, label = { Text("Date") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = dateText,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Date") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { datePicker.show() }
+                )
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(value = time, onValueChange = { time = it }, label = { Text("Time") }, modifier = Modifier.fillMaxWidth())
+
+                OutlinedTextField(
+                    value = timeText,
+                    onValueChange = {}, // read-only
+                    readOnly = true,
+                    label = { Text("Time") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { timePicker.show() }
+                )
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // Appointment type dropdown
@@ -228,7 +282,7 @@ fun AppointmentDialog(
         },
         confirmButton = {
             Button(onClick = {
-                if (vetName.isNotBlank() && clinicName.isNotBlank() && address.isNotBlank() && date.isNotBlank() && time.isNotBlank()) {
+                if (vetName.isNotBlank() && clinicName.isNotBlank() && address.isNotBlank() && dateText.isNotBlank() && timeText.isNotBlank()) {
                     onSave(
                         Appointment(
                             appointment?.id ?: 0,
@@ -236,8 +290,8 @@ fun AppointmentDialog(
                             vetName,
                             clinicName,
                             address,
-                            date,
-                            time
+                            dateText,
+                            timeText
                         )
                     )
                 }
