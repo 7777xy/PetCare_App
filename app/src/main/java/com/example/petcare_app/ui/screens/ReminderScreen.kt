@@ -18,6 +18,9 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
+import com.example.petcare_app.viewmodel.ReminderViewModel
+
+
 
 
 data class Reminder(
@@ -27,17 +30,20 @@ data class Reminder(
 )
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReminderScreen(navController: NavHostController) {
-    var reminders by remember { mutableStateOf(listOf<Reminder>()) }
+fun ReminderScreen(navController: NavHostController, viewModel: ReminderViewModel) {
+    val reminders = viewModel.reminders
     var showDialog by remember { mutableStateOf(false) }
     var editReminder: Reminder? by remember { mutableStateOf(null) }
 
     Scaffold(
         topBar = {
-            TopAppBar(title = {Text(
-                text = "Reminders",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.primary) })
+            TopAppBar(title = {
+                Text(
+                    text = "Reminders",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            })
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -50,32 +56,41 @@ fun ReminderScreen(navController: NavHostController) {
             }
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding).padding(8.dp).fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .padding(padding)
+                .padding(16.dp)
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(bottom = 16.dp)
+
+        ){
             if (reminders.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                item {Box(
+                    modifier = Modifier
+                        .fillParentMaxSize() // Make the Box take the whole LazyColumn space
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center // Center content horizontally and vertically
                 ) {
                     Text("No reminders yet. Tap + to add one.")
-                }
-            } else {
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(reminders, key = { it.id }) { reminder ->
-                        ReminderItem(
-                            reminder = reminder,
-                            onEdit = {
-                                editReminder = it
-                                showDialog = true
-                            },
-                            onDelete = {
-                                reminders = reminders.filterNot { r -> r.id == it.id }
-                            }
-                        )
-                    }
+                }}
+        } else {
+                items(reminders, key = { it.id }) { reminder ->
+                    ReminderItem(
+                        reminder = reminder,
+                        onEdit = {
+                            editReminder = it
+                            showDialog = true
+                        },
+                        onDelete = {
+                            viewModel.deleteReminder(it)
+                        }
+                    )
                 }
             }
         }
     }
+
 
     // Add/Edit dialog
     if (showDialog) {
@@ -83,14 +98,10 @@ fun ReminderScreen(navController: NavHostController) {
             reminder = editReminder,
             onDismiss = { showDialog = false },
             onSave = { reminder ->
-                reminders = if (editReminder == null) {
-                    // Add new
-                    reminders + reminder.copy(id = (reminders.size + 1))
+                if (editReminder == null) {
+                    viewModel.addReminder(reminder)
                 } else {
-                    // Update existing
-                    reminders.map {
-                        if (it.id == reminder.id) reminder else it
-                    }
+                    viewModel.updateReminder(reminder)
                 }
                 showDialog = false
             }
@@ -178,3 +189,4 @@ fun ReminderDialog(
         }
     )
 }
+

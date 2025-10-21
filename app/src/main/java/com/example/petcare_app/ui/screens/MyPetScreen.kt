@@ -5,13 +5,18 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavHostController
+import com.example.petcare_app.viewmodel.MyPetViewModel
 
 
 data class Pet(
@@ -32,19 +37,19 @@ data class BasicInfo(
 )
 
 data class Lifestyle(
-    var exerciseRoutine: String = "",
-    var diet: String = ""
+    var exerciseRoutine: String,
+    var diet: String
 )
 
 data class History(
-    var medicalHistory: String = "",
-    var vaccinationHistory: String = ""
+    var medicalHistory: String,
+    var vaccinationHistory: String
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MyPetScreen(navController: NavHostController) {
-    var pets by remember { mutableStateOf(listOf<Pet>()) }
+fun MyPetScreen(navController: NavHostController, viewModel: MyPetViewModel) {
+    val pets = viewModel.pets
 
     Scaffold(
         topBar = {
@@ -55,28 +60,23 @@ fun MyPetScreen(navController: NavHostController) {
         },
         floatingActionButton = {
             FloatingActionButton(onClick = {
-                pets = pets + Pet(
-                    id = pets.size + 1,
-                    basicInfo = BasicInfo("", "", "", "", "", "", ""),
-                    lifestyle = Lifestyle(),
-                    history = History()
+                viewModel.addPet(
+                    Pet(
+                        id = pets.size + 1,
+                        basicInfo = BasicInfo("", "", "", "", "", "", ""),
+                        lifestyle = Lifestyle("", ""),
+                        history = History("", "")
+                    )
                 )
-            }) {
-                Icon(Icons.Default.Add, contentDescription = "Add Pet Details")
+            }
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add Pet")
             }
         }
     ) { padding ->
         MyPetsContent(
             pets = pets,
-            onUpdateBasic = { pet, updated ->
-                pets = pets.map { if (it.id == pet.id) it.copy(basicInfo = updated) else it }
-            },
-            onUpdateLifestyle = { pet, updated ->
-                pets = pets.map { if (it.id == pet.id) it.copy(lifestyle = updated) else it }
-            },
-            onUpdateHistory = { pet, updated ->
-                pets = pets.map { if (it.id == pet.id) it.copy(history = updated) else it }
-            },
+            viewModel = viewModel,
             modifier = Modifier.padding(padding)
         )
     }
@@ -86,15 +86,15 @@ fun MyPetScreen(navController: NavHostController) {
 @Composable
 fun MyPetsContent(
     pets: List<Pet>,
-    onUpdateBasic: (Pet, BasicInfo) -> Unit,
-    onUpdateLifestyle: (Pet, Lifestyle) -> Unit,
-    onUpdateHistory: (Pet, History) -> Unit,
+    viewModel: MyPetViewModel,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = modifier
+            .padding(16.dp)
+            .fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(bottom = 16.dp)
     ) {
         if (pets.isEmpty()) {
             item {
@@ -110,20 +110,64 @@ fun MyPetsContent(
         }
         else {
             items(pets, key = { it.id }) { pet ->
-                BasicInfoCard(pet) { updated -> onUpdateBasic(pet, updated) }
-                LifestyleCard(pet) { updated -> onUpdateLifestyle(pet, updated) }
-                HistoryCard(pet) { updated -> onUpdateHistory(pet, updated) }
+                PetNameCard(pet, viewModel)
             }
         }
     }
 }
 
+@Composable
+fun PetNameCard(pet: Pet, viewModel: MyPetViewModel) {
+    var expanded by remember { mutableStateOf(false) } // Track expand/collapse state
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) { // --- Header Row (Pet name + expand + delete) ---
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 12.dp, end = 4.dp), // Adjust padding for visual balance
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Details of ${pet.basicInfo.name.ifBlank { "Unnamed Pet" }}",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f) // Allow text to take available space
+                )
+                Row {
+                    IconButton(onClick = { expanded = !expanded }) {
+                        Icon(
+                            imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            contentDescription = if (expanded) "Collapse" else "Expand"
+                        )
+                    }
+                    IconButton(onClick = { viewModel.deletePet(pet) }) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete Pet")
+                    }
+                }
+            }
+            // --- Expandable Section ---
+            if (expanded) {
+                Spacer(Modifier.height(12.dp))
+                BasicInfoCard(pet, viewModel)
+                LifestyleCard(pet, viewModel)
+                HistoryCard(pet, viewModel)
+            }
+        }
+    }
+}
 
 @Composable
-fun BasicInfoCard(pet: Pet, onUpdate: (BasicInfo) -> Unit) {
+fun BasicInfoCard(pet: Pet, viewModel: MyPetViewModel) {
     var showDialog by remember { mutableStateOf(false) }
 
-    InfoCard(title = "🐾 Basic Info (${pet.basicInfo.name.ifBlank { "Unnamed Pet" }})") {
+    InfoCard(title = "🐾 Basic Info") {
         Text("Age: ${pet.basicInfo.age}")
         Text("Species: ${pet.basicInfo.species}")
         Text("Weight: ${pet.basicInfo.weight}")
@@ -141,19 +185,21 @@ fun BasicInfoCard(pet: Pet, onUpdate: (BasicInfo) -> Unit) {
         BasicInfoDialog(
             initial = pet.basicInfo,
             onDismiss = { showDialog = false },
-            onSave = {
-                onUpdate(it)
+            onSave = {updatedBasicInfo ->
+                // Create a new Pet object with updated BasicInfo
+                val updatedPet = pet.copy(basicInfo = updatedBasicInfo)
+                viewModel.updatePet(updatedPet)  // call the ViewModel
                 showDialog = false
             }
         )
     }
 
-    Spacer(Modifier.height(16.dp))
+    Spacer(Modifier.height(8.dp))
 }
 
 
 @Composable
-fun LifestyleCard(pet: Pet, onUpdate: (Lifestyle) -> Unit) {
+fun LifestyleCard(pet: Pet, viewModel: MyPetViewModel) {
     var showDialog by remember { mutableStateOf(false) }
 
     InfoCard(title = "🏃 Lifestyle") {
@@ -170,18 +216,22 @@ fun LifestyleCard(pet: Pet, onUpdate: (Lifestyle) -> Unit) {
         LifestyleDialog(
             initial = pet.lifestyle,
             onDismiss = { showDialog = false },
-            onSave = {
-                onUpdate(it)
+            onSave = { updatedLifestyle ->
+                // Create a new Pet object with updated Lifestyle
+                val updatedPet = pet.copy(lifestyle = updatedLifestyle)
+                viewModel.updatePet(updatedPet)  // call the ViewModel
                 showDialog = false
             }
         )
     }
-    Spacer(Modifier.height(16.dp))
+
+    Spacer(Modifier.height(8.dp))
 }
 
 
+
 @Composable
-fun HistoryCard(pet: Pet, onUpdate: (History) -> Unit) {
+fun HistoryCard(pet: Pet, viewModel: MyPetViewModel) {
     var showDialog by remember { mutableStateOf(false) }
 
     InfoCard(title = "📜 History") {
@@ -190,7 +240,8 @@ fun HistoryCard(pet: Pet, onUpdate: (History) -> Unit) {
 
         Spacer(Modifier.height(8.dp))
         Row {
-            Button(onClick = { showDialog = true }) { Text("Edit") }
+            Button(onClick = { showDialog = true }) { Text("Edit")
+                }
         }
     }
 
@@ -198,13 +249,15 @@ fun HistoryCard(pet: Pet, onUpdate: (History) -> Unit) {
         HistoryDialog(
             initial = pet.history,
             onDismiss = { showDialog = false },
-            onSave = {
-                onUpdate(it)
+            onSave = {updatedHistory ->
+                // Create a new Pet object with updated History
+                val updatedPet = pet.copy(history = updatedHistory)
+                viewModel.updatePet(updatedPet)  // call the ViewModel
                 showDialog = false
             }
         )
     }
-    Spacer(Modifier.height(16.dp))
+    Spacer(Modifier.height(8.dp))
 }
 
 
@@ -319,5 +372,4 @@ fun InfoCard(
         }
     }
 }
-
 

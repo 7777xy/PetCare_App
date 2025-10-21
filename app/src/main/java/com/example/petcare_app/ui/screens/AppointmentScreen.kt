@@ -12,8 +12,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.example.petcare_app.viewmodel.AppointmentViewModel
 
 // Data models
 data class Appointment(
@@ -28,8 +28,9 @@ data class Appointment(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppointmentScreen(navController: NavHostController) {
-    var appointments by remember { mutableStateOf(listOf<Appointment>()) }
+fun AppointmentScreen(navController: NavHostController, viewModel: AppointmentViewModel) {
+    val appointments = viewModel.appointments
+
     var showDialog by remember { mutableStateOf(false) }
     var editAppointment: Appointment? by remember { mutableStateOf(null) }
 
@@ -56,24 +57,25 @@ fun AppointmentScreen(navController: NavHostController) {
             }
         }
     ) { padding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .padding(padding)
                 .padding(16.dp)
-                .fillMaxSize()
-        ) {
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(bottom = 16.dp)
+
+        ){
             if (appointments.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                item {Box(
+                    modifier = Modifier
+                        .fillParentMaxSize() // Make the Box take the whole LazyColumn space
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center // Center content horizontally and vertically
                 ) {
                     Text("No appointments yet. Tap + to add one.")
-                }
+                }}
             } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
                     // Vet appointments
                     val vetAppointments = appointments.filter { it.type == "vet" }
                     if (vetAppointments.isNotEmpty()) {
@@ -83,7 +85,7 @@ fun AppointmentScreen(navController: NavHostController) {
                                 style = MaterialTheme.typography.titleLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                modifier = Modifier.padding(vertical = 8.dp)
+
                             )
                         }
                         items(vetAppointments, key = { it.id }) { appt ->
@@ -94,7 +96,7 @@ fun AppointmentScreen(navController: NavHostController) {
                                     showDialog = true
                                 },
                                 onDelete = {
-                                    appointments = appointments.filterNot { a -> a.id == it.id }
+                                    viewModel.deleteAppointment(it)
                                 }
                             )
                         }
@@ -109,7 +111,7 @@ fun AppointmentScreen(navController: NavHostController) {
                                 style = MaterialTheme.typography.titleLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                modifier = Modifier.padding(vertical = 8.dp)
+
                             )
                         }
                         items(vaccineAppointments, key = { it.id }) { appt ->
@@ -120,7 +122,7 @@ fun AppointmentScreen(navController: NavHostController) {
                                     showDialog = true
                                 },
                                 onDelete = {
-                                    appointments = appointments.filterNot { a -> a.id == it.id }
+                                    viewModel.deleteAppointment(it)
                                 }
                             )
                         }
@@ -128,7 +130,6 @@ fun AppointmentScreen(navController: NavHostController) {
                 }
             }
         }
-    }
 
     // Add/Edit dialog
     if (showDialog) {
@@ -136,10 +137,10 @@ fun AppointmentScreen(navController: NavHostController) {
             appointment = editAppointment,
             onDismiss = { showDialog = false },
             onSave = { appt ->
-                appointments = if (editAppointment == null) {
-                    appointments + appt.copy(id = (appointments.size + 1))
+                if (editAppointment == null) {
+                    viewModel.addAppointment(appt)
                 } else {
-                    appointments.map { if (it.id == appt.id) appt else it }
+                    viewModel.updateAppointment(appt)
                 }
                 showDialog = false
             }
@@ -170,8 +171,8 @@ fun AppointmentCard(
 
             Spacer(modifier = Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Button(onClick = { /* TODO: send message to vet */ }) {
-                    Text("Message Vet")
+                Button(onClick = { /* TODO: send message to staff */ }) {
+                    Text("Message Staff")
                 }
                 Row {
                     IconButton(onClick = { onEdit(appointment) }) {
