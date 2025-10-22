@@ -1,13 +1,5 @@
 package com.example.petcare_app.ui.screens
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.navigation.NavHostController
-import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,8 +8,11 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import com.example.petcare_app.viewmodel.ReminderViewModel
 import android.app.DatePickerDialog
 import android.widget.DatePicker
@@ -26,7 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import java.util.Calendar
 import android.app.TimePickerDialog
 import android.widget.TimePicker
-
+import java.util.Random
 
 
 data class Reminder(
@@ -34,12 +29,15 @@ data class Reminder(
     var title: String,
     var date: String
 )
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReminderScreen(navController: NavHostController, viewModel: ReminderViewModel) {
     val reminders = viewModel.reminders
     var showDialog by remember { mutableStateOf(false) }
     var editReminder: Reminder? by remember { mutableStateOf(null) }
+
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -80,7 +78,7 @@ fun ReminderScreen(navController: NavHostController, viewModel: ReminderViewMode
                 ) {
                     Text("No reminders yet. Tap + to add one.")
                 }}
-        } else {
+            } else {
                 items(reminders, key = { it.id }) { reminder ->
                     ReminderItem(
                         reminder = reminder,
@@ -89,14 +87,15 @@ fun ReminderScreen(navController: NavHostController, viewModel: ReminderViewMode
                             showDialog = true
                         },
                         onDelete = {
-                            viewModel.deleteReminder(it)
+                            // Cancel any scheduled alarm and then delete
+                            viewModel.deleteReminderAndCancel(context, it)
+                            android.util.Log.d("ReminderScreen", "Reminder deleted and alarm canceled: ${it.title}")
                         }
                     )
                 }
             }
         }
     }
-
 
     // Add/Edit dialog
     if (showDialog) {
@@ -109,6 +108,10 @@ fun ReminderScreen(navController: NavHostController, viewModel: ReminderViewMode
                 } else {
                     viewModel.updateReminder(reminder)
                 }
+                // Schedule notification here
+                viewModel.scheduleReminder(context, reminder)
+                android.util.Log.d("ReminderScreen", "Reminder scheduled: ${reminder.title}")
+
                 showDialog = false
             }
         )
@@ -122,9 +125,7 @@ fun ReminderItem(
     onDelete: (Reminder) -> Unit
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
+        modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Row(
@@ -162,13 +163,13 @@ fun ReminderDialog(
     val calendar = remember { Calendar.getInstance() }
 
     // --- Date Picker ---
-    var dateText by remember { mutableStateOf(reminder?.date ?: "") }
+    var dateText by remember { mutableStateOf(reminder?.date?.substringBefore(" ", "") ?: "") }
     val datePicker = remember {
         DatePickerDialog(
             context,
             { _: DatePicker, year: Int, month: Int, dayOfMonth: Int ->
                 calendar.set(year, month, dayOfMonth)
-                dateText = "${year}-${month + 1}-${dayOfMonth}" // yyyy-MM-dd
+                dateText = String.format("%04d-%02d-%02d", year, month + 1, dayOfMonth)
             },
             calendar.get(Calendar.YEAR),
             calendar.get(Calendar.MONTH),
@@ -176,17 +177,18 @@ fun ReminderDialog(
         )
     }
 
-// --- Time Picker ---
-    var timeText by remember { mutableStateOf(reminder?.date?.substringAfter(" ", "") ?: "") } // store time separately
+    // --- Time Picker ---
+    var timeText by remember { mutableStateOf(reminder?.date?.substringAfter(" ", "") ?: "") }
     val timePicker = remember {
         TimePickerDialog(
             context,
             { _: TimePicker, hour: Int, minute: Int ->
-                timeText = String.format("%02d:%02d", hour, minute) // HH:mm
+                // 24-hour format enforced
+                timeText = String.format("%02d:%02d", hour, minute)
             },
             calendar.get(Calendar.HOUR_OF_DAY),
             calendar.get(Calendar.MINUTE),
-            true // 24-hour format
+            true
         )
     }
 
@@ -216,26 +218,29 @@ fun ReminderDialog(
 
                 OutlinedTextField(
                     value = timeText,
-                    onValueChange = {}, // read-only
+                    onValueChange = {},
                     readOnly = true,
                     label = { Text("Time") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { timePicker.show() }
                 )
-
             }
         },
         confirmButton = {
             Button(onClick = {
-                if (title.isNotBlank() && dateText.isNotBlank()) {
-                    val combinedDateTime = if (timeText.isNotBlank()) "$dateText $timeText" else dateText
-                    onSave(Reminder(reminder?.id ?: 0, title, combinedDateTime))
+                if (title.isNotBlank() && dateText.isNotBlank() && timeText.isNotBlank()) {
+                    val combinedDateTime = "$dateText $timeText"
+                    onSave(Reminder(reminder?.id ?: Random().nextInt(1_000_000), title, combinedDateTime))
                 }
-            }) { Text("Save") }
+            }) {
+                Text("Save")
+            }
         },
         dismissButton = {
             OutlinedButton(onClick = onDismiss) { Text("Cancel") }
         }
-    )}
+    )
+}
+
 

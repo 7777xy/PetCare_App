@@ -6,11 +6,18 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-
 import com.example.petcare_app.data.AppDatabase
 import com.example.petcare_app.data.toReminderEntity
 import com.example.petcare_app.data.toReminder
 import com.example.petcare_app.ui.screens.Reminder
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.os.Build
+import com.example.petcare_app.ReminderReceiver
+import java.text.SimpleDateFormat
+import java.util.*
 
 class ReminderViewModel(private val db: AppDatabase) : ViewModel() {
     var reminders by mutableStateOf(listOf<Reminder>())
@@ -19,6 +26,7 @@ class ReminderViewModel(private val db: AppDatabase) : ViewModel() {
     init {
         viewModelScope.launch {
             reminders = db.reminderDao().getAll().map { it.toReminder() }
+                .sortedBy { it.date } // Sort by date string
         }
     }
 
@@ -26,6 +34,7 @@ class ReminderViewModel(private val db: AppDatabase) : ViewModel() {
         viewModelScope.launch {
             db.reminderDao().insert(newReminder.toReminderEntity())
             reminders = db.reminderDao().getAll().map { it.toReminder() }
+                .sortedBy { it.date } // Sort by date string
         }
     }
 
@@ -33,6 +42,7 @@ class ReminderViewModel(private val db: AppDatabase) : ViewModel() {
         viewModelScope.launch {
             db.reminderDao().update(updatedReminder.toReminderEntity())
             reminders = db.reminderDao().getAll().map { it.toReminder() }
+                .sortedBy { it.date } // Sort by date string
         }
     }
 
@@ -40,6 +50,103 @@ class ReminderViewModel(private val db: AppDatabase) : ViewModel() {
         viewModelScope.launch {
             db.reminderDao().delete(reminder.toReminderEntity())
             reminders = db.reminderDao().getAll().map { it.toReminder() }
+                .sortedBy { it.date } // Sort by date string
         }
+    }
+
+    // --- Schedule notification safely ---
+    fun scheduleReminder(context: Context, reminder: Reminder) {
+        try {
+            android.util.Log.d(
+                "ReminderViewModel",
+                "Scheduling reminder: ${reminder.title} for ${reminder.date}"
+            )
+
+            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+            sdf.timeZone = TimeZone.getDefault() // important
+            val date = try {
+                sdf.parse(reminder.date)
+            } catch (e: Exception) {
+                android.util.Log.e("ReminderViewModel", "Failed to parse date: ${reminder.date}", e)
+                null
+            }
+            if (date == null) return
+
+            val triggerTime = date.time
+            if (triggerTime <= System.currentTimeMillis()) {
+                android.util.Log.w("ReminderViewModel", "Skipping past reminder: ${reminder.title}")
+                return // skip past reminders
+            }
+
+            val intent = Intent(context, ReminderReceiver::class.java).apply {
+                putExtra("title", reminder.title)
+                putExtra("message", "It's time to ${reminder.title.lowercase()}")
+            }
+
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                reminder.id,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+                    android.util.Log.w(
+                        "ReminderViewModel",
+                        "Cannot schedule exact alarms - using inexact alarm instead"
+                    )
+                    // Fallback to inexact alarm
+                    alarmManager.setAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        triggerTime,
+                        pendingIntent
+                    )
+                    android.util.Log.d("ReminderViewModel", "Inexact alarm scheduled for ${reminder.title}")
+                } else {
+                    alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        triggerTime,
+                        pendingIntent
+                    )
+                    android.util.Log.d(
+                        "ReminderViewModel",
+                        "Exact alarm scheduled successfully for ${reminder.title}"
+                    )
+                }
+            } catch (e: SecurityException) {
+                android.util.Log.e("ReminderViewModel", "Security exception scheduling alarm", e)
+            }
+
+        } catch (e: Exception) {
+            android.util.Log.e("ReminderViewModel", "Error scheduling reminder", e)
+        }
+    }
+
+    // --- Cancel a scheduled reminder ---
+    fun cancelReminder(context: Context, reminder: Reminder) {
+        try {
+            android.util.Log.d("ReminderViewModel", "Canceling reminder: ${reminder.title}")
+            val intent = Intent(context, ReminderReceiver::class.java)
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                reminder.id,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            alarmManager.cancel(pendingIntent)
+            android.util.Log.d("ReminderViewModel", "Alarm canceled for ${reminder.title}")
+        } catch (e: Exception) {
+            android.util.Log.e("ReminderViewModel", "Error canceling reminder", e)
+        }
+    }
+
+    // Convenience: delete from DB and cancel alarm
+    fun deleteReminderAndCancel(context: Context, reminder: Reminder) {
+        cancelReminder(context, reminder)
+        deleteReminder(reminder)
     }
 }
