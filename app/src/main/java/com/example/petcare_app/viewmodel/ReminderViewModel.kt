@@ -3,6 +3,8 @@ package com.example.petcare_app.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -20,37 +22,81 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class ReminderViewModel(private val db: AppDatabase) : ViewModel() {
-    var reminders by mutableStateOf(listOf<Reminder>())
+    var upcomingReminders by mutableStateOf(listOf<Reminder>())
+        private set
+    var pastReminders by mutableStateOf(listOf<Reminder>())
+        private set
+    var completedReminders by mutableStateOf(listOf<Reminder>())
         private set
 
     init {
         viewModelScope.launch {
-            reminders = db.reminderDao().getAll().map { it.toReminder() }
-                .sortedBy { it.date } // Sort by date string
+            refreshReminders()
         }
     }
 
     fun addReminder(newReminder: Reminder) {
         viewModelScope.launch {
             db.reminderDao().insert(newReminder.toReminderEntity())
-            reminders = db.reminderDao().getAll().map { it.toReminder() }
-                .sortedBy { it.date } // Sort by date string
+            refreshReminders()
         }
     }
 
     fun updateReminder(updatedReminder: Reminder) {
         viewModelScope.launch {
             db.reminderDao().update(updatedReminder.toReminderEntity())
-            reminders = db.reminderDao().getAll().map { it.toReminder() }
-                .sortedBy { it.date } // Sort by date string
+            refreshReminders()
         }
     }
 
     fun deleteReminder(reminder: Reminder) {
         viewModelScope.launch {
             db.reminderDao().delete(reminder.toReminderEntity())
-            reminders = db.reminderDao().getAll().map { it.toReminder() }
-                .sortedBy { it.date } // Sort by date string
+            refreshReminders()
+        }
+    }
+
+    private suspend fun refreshReminders() {
+        val all = db.reminderDao().getAll().map { it.toReminder() }
+        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+        sdf.timeZone = TimeZone.getDefault()
+        val nowMs = System.currentTimeMillis()
+
+        val completed = mutableListOf<Reminder>()
+        val upcoming = mutableListOf<Reminder>()
+        val past = mutableListOf<Reminder>()
+
+        for (reminder in all) {
+            if (reminder.completed) {
+                completed.add(reminder)
+                continue
+            }
+            val time = try { sdf.parse(reminder.date)?.time } catch (_: Exception) { null }
+            if (time == null) {
+                // If parse fails, treat as upcoming to avoid hiding items
+                upcoming.add(reminder)
+            } else if (time < nowMs) {
+                past.add(reminder)
+            } else {
+                upcoming.add(reminder)
+            }
+        }
+
+        // Update state on Main dispatcher and create new list instances to ensure recomposition
+        withContext(Dispatchers.Main) {
+            upcomingReminders = upcoming.sortedBy { it.date }.toList()
+            pastReminders = past.sortedBy { it.date }.toList()
+            completedReminders = completed.sortedBy { it.date }.toList()
+        }
+    }
+
+    fun markReminderCompleted(reminder: Reminder) {
+        android.util.Log.d("ReminderViewModel", "markReminderCompleted called: ${reminder.title}, completed: ${reminder.completed}")
+        viewModelScope.launch {
+            db.reminderDao().update(reminder.toReminderEntity())
+            android.util.Log.d("ReminderViewModel", "Reminder updated in DB, refreshing list...")
+            refreshReminders()
+            android.util.Log.d("ReminderViewModel", "List refreshed. Upcoming: ${upcomingReminders.size}, Past: ${pastReminders.size}")
         }
     }
 

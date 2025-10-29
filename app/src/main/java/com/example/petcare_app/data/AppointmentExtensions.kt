@@ -8,7 +8,8 @@ fun Appointment.toAppointmentEntity(): AppointmentEntity = AppointmentEntity(
     clinicName = clinicName,
     address = address,
     date = date,
-    time = time
+    time = time,
+    completed = completed
 )
 
 fun AppointmentEntity.toAppointment(): Appointment = Appointment(
@@ -18,5 +19,6 @@ fun AppointmentEntity.toAppointment(): Appointment = Appointment(
     clinicName = clinicName,
     address = address,
     date = date,
-    time = time
+    time = time,
+    completed = completed
 )

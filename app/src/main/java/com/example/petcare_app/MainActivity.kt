@@ -37,12 +37,14 @@ class MainActivity : ComponentActivity() {
             applicationContext,
             AppDatabase::class.java,
             "petcare.db"
-        ).build()
+        )
+            .fallbackToDestructiveMigration()
+            .build()
 
-        // ✅ Create Notification Channel for Android 8+
+        // Create Notification Channel for Android 8+
         NotificationHelper.createNotificationChannel(this)
 
-        // ✅ Request notification permission on Android 13+
+        // Request notification permission on Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(
                     this,
@@ -53,12 +55,12 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // ✅ Request exact alarm permission on Android 12+
+        // Request exact alarm permission on Android 12+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
             if (!alarmManager.canScheduleExactAlarms()) {
                 android.util.Log.w("MainActivity", "Requesting SCHEDULE_EXACT_ALARM permission")
-                requestExactAlarmPermissionLauncher.launch(android.Manifest.permission.SCHEDULE_EXACT_ALARM)
+                requestExactAlarmPermissionLauncher.launch(Manifest.permission.SCHEDULE_EXACT_ALARM)
             }
         }
 

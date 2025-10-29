@@ -11,5 +11,6 @@ data class AppointmentEntity(
     val clinicName: String,
     val address: String,
     val date: String,
-    val time: String
+    val time: String,
+    val completed: Boolean = false
 )

@@ -3,6 +3,7 @@ package com.example.petcare_app.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -11,18 +12,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.petcare_app.viewmodel.AppointmentViewModel
+import java.util.*
 import android.app.DatePickerDialog
-import android.widget.DatePicker
-import androidx.compose.foundation.clickable
-import androidx.compose.ui.platform.LocalContext
-import java.util.Calendar
 import android.app.TimePickerDialog
+import android.widget.DatePicker
 import android.widget.TimePicker
+import kotlin.random.Random
 
-// Data models
 data class Appointment(
     val id: Int,
     val type: String, // "vet" or "vaccination"
@@ -30,14 +31,17 @@ data class Appointment(
     val clinicName: String,
     val address: String,
     val date: String,
-    val time: String
+    val time: String,
+    val completed: Boolean = false
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppointmentScreen(navController: NavHostController, viewModel: AppointmentViewModel) {
-    val appointments = viewModel.appointments
-
+    val upcomingVet = viewModel.upcomingVetAppointments
+    val pastVet = viewModel.pastVetAppointments
+    val upcomingVaccine = viewModel.upcomingVaccineAppointments
+    val pastVaccine = viewModel.pastVaccineAppointments
     var showDialog by remember { mutableStateOf(false) }
     var editAppointment: Appointment? by remember { mutableStateOf(null) }
 
@@ -50,6 +54,11 @@ fun AppointmentScreen(navController: NavHostController, viewModel: AppointmentVi
                         style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
+                },
+                actions = {
+                    TextButton(onClick = { navController.navigate("appointment_history") }) {
+                        Text("History")
+                    }
                 }
             )
         },
@@ -60,7 +69,7 @@ fun AppointmentScreen(navController: NavHostController, viewModel: AppointmentVi
                     showDialog = true
                 }
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Reminder")
+                Icon(Icons.Default.Add, contentDescription = "Add Appointment")
             }
         }
     ) { padding ->
@@ -69,76 +78,81 @@ fun AppointmentScreen(navController: NavHostController, viewModel: AppointmentVi
                 .padding(padding)
                 .padding(16.dp)
                 .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(bottom = 16.dp)
-
-        ){
-            if (appointments.isEmpty()) {
-                item {Box(
-                    modifier = Modifier
-                        .fillParentMaxSize() // Make the Box take the whole LazyColumn space
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center // Center content horizontally and vertically
-                ) {
-                    Text("No appointments yet. Tap + to add one.")
-                }}
-            } else {
-                    // Vet appointments
-                    val vetAppointments = appointments.filter { it.type == "vet" }
-                    if (vetAppointments.isNotEmpty()) {
-                        item {
-                            Text(
-                                "Vet Appointments",
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-
-                            )
-                        }
-                        items(vetAppointments, key = { it.id }) { appt ->
-                            AppointmentCard(
-                                appointment = appt,
-                                onEdit = {
-                                    editAppointment = it
-                                    showDialog = true
-                                },
-                                onDelete = {
-                                    viewModel.deleteAppointment(it)
-                                }
-                            )
-                        }
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            if (upcomingVet.isEmpty() && pastVet.isEmpty() &&
+                upcomingVaccine.isEmpty() && pastVaccine.isEmpty()
+            ) {
+                item {
+                    Box(
+                        modifier = Modifier.fillParentMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No appointments yet. Tap + to add one.")
                     }
+                }
+            } else {
+                // --- Vet Appointments ---
+                if (upcomingVet.isNotEmpty()) {
+                    item { SectionTitle("Upcoming Vet Appointments") }
+                    items(upcomingVet, key = { it.id }) { appt ->
+                        AppointmentCard(
+                            appointment = appt,
+                            onEdit = { editAppointment = it; showDialog = true },
+                            onDelete = { viewModel.deleteAppointment(it) },
+                            onCompletedChange = { checked ->
+                                viewModel.markAppointmentCompleted(appt.copy(completed = checked))
+                            }
+                        )
+                    }
+                }
 
-                    // Vaccination appointments
-                    val vaccineAppointments = appointments.filter { it.type == "vaccination" }
-                    if (vaccineAppointments.isNotEmpty()) {
-                        item {
-                            Text(
-                                "Vaccination Appointments",
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                if (pastVet.isNotEmpty()) {
+                    item { SectionTitle("Past Vet Appointments") }
+                    items(pastVet, key = { it.id }) { appt ->
+                        AppointmentCard(
+                            appointment = appt,
+                            onEdit = { editAppointment = it; showDialog = true },
+                            onDelete = { viewModel.deleteAppointment(it) },
+                            onCompletedChange = { checked ->
+                                viewModel.markAppointmentCompleted(appt.copy(completed = checked))
+                            }
+                        )
+                    }
+                }
 
-                            )
-                        }
-                        items(vaccineAppointments, key = { it.id }) { appt ->
-                            AppointmentCard(
-                                appointment = appt,
-                                onEdit = {
-                                    editAppointment = it
-                                    showDialog = true
-                                },
-                                onDelete = {
-                                    viewModel.deleteAppointment(it)
-                                }
-                            )
-                        }
+                // --- Vaccine Appointments ---
+                if (upcomingVaccine.isNotEmpty()) {
+                    item { SectionTitle("Upcoming Vaccination Appointments") }
+                    items(upcomingVaccine, key = { it.id }) { appt ->
+                        AppointmentCard(
+                            appointment = appt,
+                            onEdit = { editAppointment = it; showDialog = true },
+                            onDelete = { viewModel.deleteAppointment(it) },
+                            onCompletedChange = { checked ->
+                                viewModel.markAppointmentCompleted(appt.copy(completed = checked))
+                            }
+                        )
+                    }
+                }
+
+                if (pastVaccine.isNotEmpty()) {
+                    item { SectionTitle("Past Vaccination Appointments") }
+                    items(pastVaccine, key = { it.id }) { appt ->
+                        AppointmentCard(
+                            appointment = appt,
+                            onEdit = { editAppointment = it; showDialog = true },
+                            onDelete = { viewModel.deleteAppointment(it) },
+                            onCompletedChange = { checked ->
+                                viewModel.markAppointmentCompleted(appt.copy(completed = checked))
+                            }
+                        )
                     }
                 }
             }
         }
+    }
 
-    // Add/Edit dialog
     if (showDialog) {
         AppointmentDialog(
             appointment = editAppointment,
@@ -156,32 +170,59 @@ fun AppointmentScreen(navController: NavHostController, viewModel: AppointmentVi
 }
 
 @Composable
+fun SectionTitle(title: String) {
+    Column {
+        Text(
+            title,
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+    }
+}
+
+
+@Composable
 fun AppointmentCard(
     appointment: Appointment,
     onEdit: (Appointment) -> Unit,
-    onDelete: (Appointment) -> Unit
+    onDelete: (Appointment) -> Unit,
+    onCompletedChange: (Boolean) -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "Vet Name: ${appointment.vetName}", style = MaterialTheme.typography.bodyLarge)
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(text = "Clinic Name: ${appointment.clinicName}", style = MaterialTheme.typography.bodyLarge)
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(text = "Address: ${appointment.address}", style = MaterialTheme.typography.bodyLarge)
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(text = "Date: ${appointment.date}", style = MaterialTheme.typography.bodyLarge)
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(text = "Time: ${appointment.time}", style = MaterialTheme.typography.bodyLarge)
+            Text(text = "Vet: ${appointment.vetName}",
+                style = MaterialTheme.typography.titleMedium,
+                textDecoration = if (appointment.completed) TextDecoration.LineThrough else TextDecoration.None)
+            Text(text = "Clinic: ${appointment.clinicName}",
+                style = MaterialTheme.typography.titleMedium,
+                textDecoration = if (appointment.completed) TextDecoration.LineThrough else TextDecoration.None)
+            Text(text ="Address: ${appointment.address}",
+                style = MaterialTheme.typography.titleMedium,
+                textDecoration = if (appointment.completed) TextDecoration.LineThrough else TextDecoration.None)
+            Text(text = "Date: ${appointment.date}",
+                style = MaterialTheme.typography.titleMedium,
+                textDecoration = if (appointment.completed) TextDecoration.LineThrough else TextDecoration.None)
+            Text(text = "Time: ${appointment.time}",
+                style = MaterialTheme.typography.titleMedium,
+                textDecoration = if (appointment.completed) TextDecoration.LineThrough else TextDecoration.None)
 
             Spacer(modifier = Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Button(onClick = { /* TODO: send message to staff */ }) {
-                    Text("Message Staff")
-                }
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) { Button(onClick = { /* TODO: send message to staff */ }) {
+                Text("Message Staff")
+            }
                 Row {
+                    Checkbox(
+                        checked = appointment.completed,
+                        onCheckedChange = onCompletedChange
+                    )
                     IconButton(onClick = { onEdit(appointment) }) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit")
                     }
@@ -208,14 +249,13 @@ fun AppointmentDialog(
     val context = LocalContext.current
     val calendar = remember { Calendar.getInstance() }
 
-    // --- Date Picker ---
     var dateText by remember { mutableStateOf(appointment?.date ?: "") }
     val datePicker = remember {
         DatePickerDialog(
             context,
-            { _: DatePicker, year: Int, month: Int, dayOfMonth: Int ->
-                calendar.set(year, month, dayOfMonth)
-                dateText = "${year}-${month + 1}-${dayOfMonth}" // yyyy-MM-dd
+            { _: DatePicker, year: Int, month: Int, day: Int ->
+                calendar.set(year, month, day)
+                dateText = String.format("%04d-%02d-%02d", year, month + 1, day)
             },
             calendar.get(Calendar.YEAR),
             calendar.get(Calendar.MONTH),
@@ -223,22 +263,21 @@ fun AppointmentDialog(
         )
     }
 
-// --- Time Picker ---
     var timeText by remember { mutableStateOf(appointment?.time ?: "") }
     val timePicker = remember {
         TimePickerDialog(
             context,
             { _: TimePicker, hour: Int, minute: Int ->
-                timeText = String.format("%02d:%02d", hour, minute) // HH:mm
+                timeText = String.format("%02d:%02d", hour, minute)
             },
             calendar.get(Calendar.HOUR_OF_DAY),
             calendar.get(Calendar.MINUTE),
-            true // 24-hour format
+            true
         )
     }
 
     AlertDialog(
-        onDismissRequest = { onDismiss() },
+        onDismissRequest = onDismiss,
         title = { Text(if (appointment == null) "Add Appointment" else "Edit Appointment") },
         text = {
             Column {
@@ -253,30 +292,20 @@ fun AppointmentDialog(
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Date") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { datePicker.show() }
+                    modifier = Modifier.fillMaxWidth().clickable { datePicker.show() }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-
                 OutlinedTextField(
                     value = timeText,
-                    onValueChange = {}, // read-only
+                    onValueChange = {},
                     readOnly = true,
                     label = { Text("Time") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { timePicker.show() }
+                    modifier = Modifier.fillMaxWidth().clickable { timePicker.show() }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-
-                // Appointment type dropdown
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Type: ", modifier = Modifier.padding(end = 8.dp))
-                    DropdownMenuBox(
-                        selected = type,
-                        onSelected = { type = it }
-                    )
+                    DropdownMenuBox(selected = type, onSelected = { type = it })
                 }
             }
         },
@@ -285,24 +314,21 @@ fun AppointmentDialog(
                 if (vetName.isNotBlank() && clinicName.isNotBlank() && address.isNotBlank() && dateText.isNotBlank() && timeText.isNotBlank()) {
                     onSave(
                         Appointment(
-                            appointment?.id ?: 0,
+                            appointment?.id ?: Random.nextInt(1_000_000),
                             type,
                             vetName,
                             clinicName,
                             address,
                             dateText,
-                            timeText
+                            timeText,
+                            appointment?.completed ?: false
                         )
                     )
                 }
-            }) {
-                Text("Save")
-            }
+            }) { Text("Save") }
         },
         dismissButton = {
-            OutlinedButton(onClick = { onDismiss() }) {
-                Text("Cancel")
-            }
+            OutlinedButton(onClick = onDismiss) { Text("Cancel") }
         }
     )
 }
@@ -311,20 +337,14 @@ fun AppointmentDialog(
 fun DropdownMenuBox(selected: String, onSelected: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     val items = listOf("vet", "vaccination")
-
     Box {
-        Button(onClick = { expanded = true }) {
-            Text(selected)
-        }
+        Button(onClick = { expanded = true }) { Text(selected) }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             items.forEach { item ->
-                DropdownMenuItem(
-                    text = { Text(item) },
-                    onClick = {
-                        onSelected(item)
-                        expanded = false
-                    }
-                )
+                DropdownMenuItem(text = { Text(item) }, onClick = {
+                    onSelected(item)
+                    expanded = false
+                })
             }
         }
     }

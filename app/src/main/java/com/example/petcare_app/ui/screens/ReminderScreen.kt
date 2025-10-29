@@ -18,6 +18,7 @@ import android.app.DatePickerDialog
 import android.widget.DatePicker
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextDecoration
 import java.util.Calendar
 import android.app.TimePickerDialog
 import android.widget.TimePicker
@@ -27,13 +28,17 @@ import java.util.Random
 data class Reminder(
     val id: Int,
     var title: String,
-    var date: String
+    var date: String,
+    var completed: Boolean = false
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReminderScreen(navController: NavHostController, viewModel: ReminderViewModel) {
-    val reminders = viewModel.reminders
+    // Observe state directly - since viewModel properties use mutableStateOf, 
+    // accessing them triggers recomposition automatically
+    val upcomingReminders = viewModel.upcomingReminders
+    val pastReminders = viewModel.pastReminders
     var showDialog by remember { mutableStateOf(false) }
     var editReminder: Reminder? by remember { mutableStateOf(null) }
 
@@ -41,13 +46,20 @@ fun ReminderScreen(navController: NavHostController, viewModel: ReminderViewMode
 
     Scaffold(
         topBar = {
-            TopAppBar(title = {
-                Text(
-                    text = "Reminders",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            })
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Reminders",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                },
+                actions = {
+                    TextButton(onClick = { navController.navigate("reminder_history") }) {
+                        Text("History")
+                    }
+                }
+            )
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -69,7 +81,7 @@ fun ReminderScreen(navController: NavHostController, viewModel: ReminderViewMode
             contentPadding = PaddingValues(bottom = 16.dp)
 
         ){
-            if (reminders.isEmpty()) {
+            if (upcomingReminders.isEmpty() && pastReminders.isEmpty()) {
                 item {Box(
                     modifier = Modifier
                         .fillParentMaxSize() // Make the Box take the whole LazyColumn space
@@ -79,19 +91,65 @@ fun ReminderScreen(navController: NavHostController, viewModel: ReminderViewMode
                     Text("No reminders yet. Tap + to add one.")
                 }}
             } else {
-                items(reminders, key = { it.id }) { reminder ->
-                    ReminderItem(
-                        reminder = reminder,
-                        onEdit = {
-                            editReminder = it
-                            showDialog = true
-                        },
-                        onDelete = {
-                            // Cancel any scheduled alarm and then delete
-                            viewModel.deleteReminderAndCancel(context, it)
-                            android.util.Log.d("ReminderScreen", "Reminder deleted and alarm canceled: ${it.title}")
+                if (upcomingReminders.isNotEmpty()) {
+                    item {
+                        Column {
+                            Text(
+                                text = "Upcoming",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
                         }
-                    )
+                    }
+                    items(upcomingReminders, key = { it.id }) { reminder ->
+                        ReminderItem(
+                            reminder = reminder,
+                            onEdit = {
+                                editReminder = it
+                                showDialog = true
+                            },
+                            onDelete = {
+                                // Cancel any scheduled alarm and then delete
+                                viewModel.deleteReminderAndCancel(context, it)
+                                android.util.Log.d("ReminderScreen", "Reminder deleted and alarm canceled: ${it.title}")
+                            },
+                            onCompletedChange = { checked ->
+                                viewModel.markReminderCompleted(reminder.copy(completed = checked))
+                            }
+                        )
+                    }
+                    item { Spacer(modifier = Modifier.height(16.dp)) }
+                }
+
+                if (pastReminders.isNotEmpty()) {
+                    item {
+                        Column {
+                            Text(
+                                text = "Past",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                    }
+                    items(pastReminders, key = { it.id }) { reminder ->
+                        ReminderItem(
+                            reminder = reminder,
+                            onEdit = {
+                                editReminder = it
+                                showDialog = true
+                            },
+                            onDelete = {
+                                // Cancel any scheduled alarm and then delete
+                                viewModel.deleteReminderAndCancel(context, it)
+                                android.util.Log.d("ReminderScreen", "Reminder deleted and alarm canceled: ${it.title}")
+                            },
+                            onCompletedChange = { checked ->
+                                viewModel.markReminderCompleted(reminder.copy(completed = checked))
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -122,7 +180,8 @@ fun ReminderScreen(navController: NavHostController, viewModel: ReminderViewMode
 fun ReminderItem(
     reminder: Reminder,
     onEdit: (Reminder) -> Unit,
-    onDelete: (Reminder) -> Unit
+    onDelete: (Reminder) -> Unit,
+    onCompletedChange: (Boolean) -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -135,11 +194,24 @@ fun ReminderItem(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
-                Text(text = reminder.title, style = MaterialTheme.typography.titleLarge, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                Text(
+                    text = reminder.title,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    textDecoration = if (reminder.completed) TextDecoration.LineThrough else TextDecoration.None
+                )
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(text = reminder.date, style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    text = reminder.date,
+                    style = MaterialTheme.typography.bodyLarge,
+                    textDecoration = if (reminder.completed) TextDecoration.LineThrough else TextDecoration.None
+                )
             }
-            Row {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(
+                    checked = reminder.completed,
+                    onCheckedChange = { onCompletedChange(it) }
+                )
                 IconButton(onClick = { onEdit(reminder) }) {
                     Icon(Icons.Default.Edit, contentDescription = "Edit")
                 }
@@ -231,7 +303,7 @@ fun ReminderDialog(
             Button(onClick = {
                 if (title.isNotBlank() && dateText.isNotBlank() && timeText.isNotBlank()) {
                     val combinedDateTime = "$dateText $timeText"
-                    onSave(Reminder(reminder?.id ?: Random().nextInt(1_000_000), title, combinedDateTime))
+                    onSave(Reminder(reminder?.id ?: Random().nextInt(1_000_000), title, combinedDateTime, reminder?.completed ?: false))
                 }
             }) {
                 Text("Save")
