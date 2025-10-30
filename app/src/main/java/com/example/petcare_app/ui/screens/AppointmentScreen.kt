@@ -22,6 +22,9 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.widget.DatePicker
 import android.widget.TimePicker
+import androidx.compose.material.icons.filled.Phone
+import com.example.petcare_app.data.ReminderEntity
+import com.example.petcare_app.viewmodel.ReminderViewModel
 import kotlin.random.Random
 
 data class Appointment(
@@ -37,7 +40,7 @@ data class Appointment(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppointmentScreen(navController: NavHostController, viewModel: AppointmentViewModel) {
+fun AppointmentScreen(navController: NavHostController, viewModel: AppointmentViewModel, reminderViewModel: ReminderViewModel) {
     val upcomingVet = viewModel.upcomingVetAppointments
     val pastVet = viewModel.pastVetAppointments
     val upcomingVaccine = viewModel.upcomingVaccineAppointments
@@ -98,6 +101,8 @@ fun AppointmentScreen(navController: NavHostController, viewModel: AppointmentVi
                     items(upcomingVet, key = { it.id }) { appt ->
                         AppointmentCard(
                             appointment = appt,
+                            navController = navController,
+                            reminderViewModel = reminderViewModel,
                             onEdit = { editAppointment = it; showDialog = true },
                             onDelete = { viewModel.deleteAppointment(it) },
                             onCompletedChange = { checked ->
@@ -112,6 +117,8 @@ fun AppointmentScreen(navController: NavHostController, viewModel: AppointmentVi
                     items(pastVet, key = { it.id }) { appt ->
                         AppointmentCard(
                             appointment = appt,
+                            navController = navController,
+                            reminderViewModel = reminderViewModel,
                             onEdit = { editAppointment = it; showDialog = true },
                             onDelete = { viewModel.deleteAppointment(it) },
                             onCompletedChange = { checked ->
@@ -127,6 +134,8 @@ fun AppointmentScreen(navController: NavHostController, viewModel: AppointmentVi
                     items(upcomingVaccine, key = { it.id }) { appt ->
                         AppointmentCard(
                             appointment = appt,
+                            navController = navController,
+                            reminderViewModel = reminderViewModel,
                             onEdit = { editAppointment = it; showDialog = true },
                             onDelete = { viewModel.deleteAppointment(it) },
                             onCompletedChange = { checked ->
@@ -141,6 +150,8 @@ fun AppointmentScreen(navController: NavHostController, viewModel: AppointmentVi
                     items(pastVaccine, key = { it.id }) { appt ->
                         AppointmentCard(
                             appointment = appt,
+                            navController = navController,
+                            reminderViewModel = reminderViewModel,
                             onEdit = { editAppointment = it; showDialog = true },
                             onDelete = { viewModel.deleteAppointment(it) },
                             onCompletedChange = { checked ->
@@ -185,6 +196,8 @@ fun SectionTitle(title: String) {
 @Composable
 fun AppointmentCard(
     appointment: Appointment,
+    navController: NavHostController,
+    reminderViewModel: ReminderViewModel,
     onEdit: (Appointment) -> Unit,
     onDelete: (Appointment) -> Unit,
     onCompletedChange: (Boolean) -> Unit
@@ -215,14 +228,33 @@ fun AppointmentCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
-            ) { Button(onClick = { /* TODO: send message to staff */ }) {
-                Text("Message Staff")
+            ) { Button(onClick = {
+                val reminderDateTime = "${appointment.date} ${appointment.time}"  // combine date + time
+
+                val newReminder = ReminderEntity(
+                    title = "Go to ${appointment.clinicName} to find ${appointment.vetName}",
+                    date = reminderDateTime,  // you can reuse appointment date/time
+                    completed = false
+                )
+
+                reminderViewModel.insertReminder(newReminder)
+
+                navController.navigate("reminder") {
+                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }) {
+                Text("Add Reminder")
             }
                 Row {
                     Checkbox(
                         checked = appointment.completed,
                         onCheckedChange = onCompletedChange
                     )
+                    IconButton(onClick = { /* TODO: No action yet, just visual */ }) {
+                        Icon(Icons.Default.Phone, contentDescription = "Contact Staff")
+                    }
                     IconButton(onClick = { onEdit(appointment) }) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit")
                     }

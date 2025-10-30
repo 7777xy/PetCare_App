@@ -18,6 +18,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import com.example.petcare_app.ReminderReceiver
+import com.example.petcare_app.data.ReminderEntity
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -31,6 +32,14 @@ class ReminderViewModel(private val db: AppDatabase) : ViewModel() {
 
     init {
         viewModelScope.launch {
+            refreshReminders()
+        }
+    }
+
+    // Used for Add Reminder in appointment screen
+    fun insertReminder(reminderEntity: ReminderEntity) {
+        viewModelScope.launch {
+            db.reminderDao().insert(reminderEntity) // suspend function
             refreshReminders()
         }
     }

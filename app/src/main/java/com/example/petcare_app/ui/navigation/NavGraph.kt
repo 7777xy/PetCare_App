@@ -21,9 +21,9 @@ fun NavHostContainer(navController: NavHostController, modifier: Modifier = Modi
     NavHost(navController = navController, startDestination = BottomNavItem.Home.route, modifier = modifier) {
         composable(BottomNavItem.Home.route) { HomeScreen(navController = navController, viewModel = homeViewModel) }
         composable(BottomNavItem.MyPet.route) { MyPetScreen(navController = navController, viewModel = myPetViewModel) }
-        composable(BottomNavItem.Appointment.route) { AppointmentScreen(navController = navController, viewModel = appointmentViewModel) }
+        composable(BottomNavItem.Appointment.route) { AppointmentScreen(navController = navController, viewModel = appointmentViewModel, reminderViewModel = reminderViewModel) }
         composable(BottomNavItem.Reminder.route) { ReminderScreen(navController = navController, viewModel = reminderViewModel) }
         composable("reminder_history") { ReminderHistoryScreen(navController = navController, viewModel = reminderViewModel) }
-        composable("appointment_history") { AppointmentHistoryScreen(navController = navController, viewModel = appointmentViewModel) }
+        composable("appointment_history") { AppointmentHistoryScreen(navController = navController, viewModel = appointmentViewModel, reminderViewModel = reminderViewModel) }
     }
 }

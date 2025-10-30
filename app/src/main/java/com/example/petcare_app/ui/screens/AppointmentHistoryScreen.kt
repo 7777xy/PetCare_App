@@ -12,10 +12,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.petcare_app.viewmodel.AppointmentViewModel
+import com.example.petcare_app.viewmodel.ReminderViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppointmentHistoryScreen(navController: NavHostController, viewModel: AppointmentViewModel) {
+fun AppointmentHistoryScreen(navController: NavHostController, viewModel: AppointmentViewModel, reminderViewModel: ReminderViewModel) {
     val history = viewModel.completedAppointments
 
     Scaffold(
@@ -53,6 +54,8 @@ fun AppointmentHistoryScreen(navController: NavHostController, viewModel: Appoin
                 items(history, key = { it.id }) { appt ->
                     AppointmentCard(
                         appointment = appt,
+                        navController = navController,
+                        reminderViewModel = reminderViewModel,
                         onEdit = { /* optional edit in history */ },
                         onDelete = { viewModel.deleteAppointment(it) },
                         onCompletedChange = { checked ->
