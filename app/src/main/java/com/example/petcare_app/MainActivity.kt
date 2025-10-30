@@ -20,6 +20,8 @@ import com.example.petcare_app.ui.theme.PetCare_AppTheme
 import androidx.room.Room
 import com.example.petcare_app.data.AppDatabase
 import com.example.petcare_app.utils.NotificationHelper
+import com.example.petcare_app.viewmodel.HomeViewModel
+import com.example.petcare_app.viewmodel.HomeViewModelFactory
 import com.example.petcare_app.viewmodel.MyPetViewModel
 import com.example.petcare_app.viewmodel.MyPetViewModelFactory
 import com.example.petcare_app.viewmodel.AppointmentViewModel
@@ -92,16 +94,16 @@ class MainActivity : ComponentActivity() {
     fun PetCareApp(db: AppDatabase) {
         PetCare_AppTheme {
             val navController = rememberNavController()
+            val homeViewModel: HomeViewModel = viewModel(factory = HomeViewModelFactory(db))
             val myPetViewModel: MyPetViewModel = viewModel(factory = MyPetViewModelFactory(db))
-            val appointmentViewModel: AppointmentViewModel =
-                viewModel(factory = AppointmentViewModelFactory(db))
-            val reminderViewModel: ReminderViewModel =
-                viewModel(factory = ReminderViewModelFactory(db))
+            val appointmentViewModel: AppointmentViewModel = viewModel(factory = AppointmentViewModelFactory(db))
+            val reminderViewModel: ReminderViewModel = viewModel(factory = ReminderViewModelFactory(db))
 
             Scaffold(bottomBar = { BottomBar(navController) }) { innerPadding ->
                 NavHostContainer(
                     navController,
                     Modifier.padding(innerPadding),
+                    homeViewModel,
                     myPetViewModel,
                     appointmentViewModel,
                     reminderViewModel

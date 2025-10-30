@@ -16,11 +16,20 @@ import androidx.compose.ui.res.painterResource
 import com.example.petcare_app.R
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.text.style.TextAlign
+
+import com.example.petcare_app.viewmodel.HomeViewModel
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 
 @Composable
-fun HomeScreen(navController: NavHostController) {
+fun HomeScreen(navController: NavHostController, viewModel: HomeViewModel) {
+
+    val reminders by viewModel.reminders.collectAsState(initial = emptyList())
+
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -127,10 +136,28 @@ fun HomeScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 4. Pending Reminders Section
+            // 4. Upcoming Reminders Section
+
+            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+            val nowMs = System.currentTimeMillis()
+
+            val upcomingReminders = reminders.filter { reminder ->
+                try {
+                    val reminderTime = sdf.parse("${reminder.date}")?.time
+                    reminderTime != null && reminderTime > nowMs
+                } catch (e: Exception) {
+                    false
+                }
+            }
+
+            val reminderItems = upcomingReminders
+                .sortedBy { sdf.parse("${it.date}")?.time } // ensure chronological order
+                .take(2) // show first two only
+                .map { "${it.title} - ${it.date}" }
+
             SectionCard(
-                title = "Pending Reminders",
-                items = listOf("Deworming Medicine - Oct 7 ~ Oct 13", "Grooming Session - Oct 9, 5:00 PM"),
+                title = "Upcoming Reminders",
+                items = reminderItems,
                 actionLabel = "Add Reminder",
                 onActionClick = {
                     navController.navigate("reminder") {
