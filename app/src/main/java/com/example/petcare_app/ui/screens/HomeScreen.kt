@@ -7,7 +7,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-
 import androidx.compose.material3.*
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -20,20 +19,30 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.text.style.TextAlign
-
 import com.example.petcare_app.viewmodel.HomeViewModel
+import com.example.petcare_app.viewmodel.MyPetViewModel
 import java.text.SimpleDateFormat
 import java.util.Locale
 
 
 @Composable
-fun HomeScreen(navController: NavHostController, viewModel: HomeViewModel) {
+fun HomeScreen(navController: NavHostController, viewModel: HomeViewModel, petViewModel: MyPetViewModel) {
 
+    val pets = petViewModel.pets
     val appointments by viewModel.appointments.collectAsState(initial = emptyList())
     val reminders by viewModel.reminders.collectAsState(initial = emptyList())
 
     val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
     val nowMs = System.currentTimeMillis()
+
+    val petItems = if (pets.isNotEmpty()) {
+        pets.take(2)
+        pets.map { pet ->
+            "Name: ${pet.basicInfo.name.ifBlank { "Unnamed" }} | " +
+                    "Age: ${pet.basicInfo.age.ifBlank { "Unknown" }} | " +
+                    "Breed: ${pet.basicInfo.breed.ifBlank { "Unknown" }}"
+        }
+    } else emptyList()
 
     val upcomingAppointments = appointments.filter { appointment ->
         try {
@@ -46,7 +55,7 @@ fun HomeScreen(navController: NavHostController, viewModel: HomeViewModel) {
     val appointmentItems = upcomingAppointments
         .sortedBy { sdf.parse("${it.date} ${it.time}")?.time }
         .take(2)
-        .map { "${it.type.capitalize()} Appointment: ${it.vetName} in ${it.clinicName}; Date & Time: ${it.date} ${it.time}" }
+        .map { "${it.type.capitalize()} Appointment: Find ${it.vetName} in ${it.clinicName} - ${it.date} ${it.time}" }
 
     val upcomingReminders = reminders.filter { reminder ->
         try {
@@ -83,8 +92,8 @@ fun HomeScreen(navController: NavHostController, viewModel: HomeViewModel) {
             // 2. Description
             item {
                 Text(
-                    text = "This is a multifunctional and comprehensive APP, helping user to easily monitor his pets’ fitness, receive timely reminders for \n" +
-                            "appointment and vaccination, and keep organized records of diet and activity.",
+                    text = "This is a multifunctional and comprehensive APP, helping users to easily monitor their pets’ fitness, receive timely reminders for \n" +
+                            "appointments and tasks, and keep organized records of diet and activity.",
                     style = MaterialTheme.typography.bodyLarge,
                     textAlign = TextAlign.Center,
                     modifier = Modifier
@@ -96,59 +105,18 @@ fun HomeScreen(navController: NavHostController, viewModel: HomeViewModel) {
 
             // 3. Profile summary
             item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Left profile
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_sample_user_profile),
-                            contentDescription = "Profile Picture",
-                            modifier = Modifier.size(64.dp).clip(CircleShape)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = "Alex",
-                                fontSize = 20.sp,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-                            )
-                            Text(
-                                text = "22 years old",
-                                fontSize = 20.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                SectionCard(
+                    title = "Pet Basic Info",
+                    items = petItems,
+                    actionLabel = "View Pet Details",
+                    onActionClick = {
+                        navController.navigate("mypet") {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
                         }
                     }
-
-                    Spacer(modifier = Modifier.width(14.dp))
-
-                    // Right profile
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_sample_pet_profile),
-                            contentDescription = "Profile Picture",
-                            modifier = Modifier.size(64.dp).clip(CircleShape)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = "Jack",
-                                fontSize = 20.sp,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-                            )
-                            Text(
-                                text = "2 years old",
-                                fontSize = 20.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(18.dp))
+                )
             }
 
             // 4. Upcoming Appointments Section

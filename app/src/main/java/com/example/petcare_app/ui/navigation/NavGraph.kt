@@ -19,7 +19,7 @@ import com.example.petcare_app.viewmodel.ReminderViewModel
 @Composable
 fun NavHostContainer(navController: NavHostController, modifier: Modifier = Modifier, homeViewModel: HomeViewModel, myPetViewModel: MyPetViewModel, appointmentViewModel: AppointmentViewModel, reminderViewModel: ReminderViewModel) {
     NavHost(navController = navController, startDestination = BottomNavItem.Home.route, modifier = modifier) {
-        composable(BottomNavItem.Home.route) { HomeScreen(navController = navController, viewModel = homeViewModel) }
+        composable(BottomNavItem.Home.route) { HomeScreen(navController = navController, viewModel = homeViewModel, petViewModel = myPetViewModel) }
         composable(BottomNavItem.MyPet.route) { MyPetScreen(navController = navController, viewModel = myPetViewModel) }
         composable(BottomNavItem.Appointment.route) { AppointmentScreen(navController = navController, viewModel = appointmentViewModel, reminderViewModel = reminderViewModel) }
         composable(BottomNavItem.Reminder.route) { ReminderScreen(navController = navController, viewModel = reminderViewModel) }

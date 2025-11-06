@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.petcare_app.data.AppDatabase
 import com.example.petcare_app.data.toAppointment
+import com.example.petcare_app.data.toPet
 import com.example.petcare_app.data.toReminder
 import com.example.petcare_app.ui.screens.Appointment
 import com.example.petcare_app.ui.screens.Reminder
@@ -12,6 +13,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class HomeViewModel(private val db: AppDatabase) : ViewModel() {
+
+    private val _pets = MutableStateFlow<List<Appointment>>(emptyList())
+    val pets = _pets.asStateFlow()
 
     private val _appointments = MutableStateFlow<List<Appointment>>(emptyList())
     val appointments = _appointments.asStateFlow()
@@ -23,7 +27,6 @@ class HomeViewModel(private val db: AppDatabase) : ViewModel() {
         loadAppointments()
         loadReminders()
     }
-
     private fun loadAppointments() {
         viewModelScope.launch {
             val allAppointments = db.appointmentDao().getAll().map { it.toAppointment() }

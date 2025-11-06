@@ -18,6 +18,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavHostController
 import com.example.petcare_app.viewmodel.MyPetViewModel
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 
 data class Pet(
     val id: Int,
@@ -154,7 +159,7 @@ fun PetNameCard(pet: Pet, viewModel: MyPetViewModel) {
             }
             // --- Expandable Section ---
             if (expanded) {
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(4.dp))
                 BasicInfoCard(pet, viewModel)
                 LifestyleCard(pet, viewModel)
                 HistoryCard(pet, viewModel)
@@ -167,7 +172,7 @@ fun PetNameCard(pet: Pet, viewModel: MyPetViewModel) {
 fun BasicInfoCard(pet: Pet, viewModel: MyPetViewModel) {
     var showDialog by remember { mutableStateOf(false) }
 
-    InfoCard(title = "🐾 Basic Info") {
+    InfoCard(title = "🐾 Basic Info", backgroundColor = Color(0xFFE0F7FA)) { // light cyan
         Text("Age: ${pet.basicInfo.age}")
         Text("Species: ${pet.basicInfo.species}")
         Text("Weight: ${pet.basicInfo.weight}")
@@ -186,9 +191,8 @@ fun BasicInfoCard(pet: Pet, viewModel: MyPetViewModel) {
             initial = pet.basicInfo,
             onDismiss = { showDialog = false },
             onSave = {updatedBasicInfo ->
-                // Create a new Pet object with updated BasicInfo
                 val updatedPet = pet.copy(basicInfo = updatedBasicInfo)
-                viewModel.updatePet(updatedPet)  // call the ViewModel
+                viewModel.updatePet(updatedPet)
                 showDialog = false
             }
         )
@@ -197,12 +201,11 @@ fun BasicInfoCard(pet: Pet, viewModel: MyPetViewModel) {
     Spacer(Modifier.height(8.dp))
 }
 
-
 @Composable
 fun LifestyleCard(pet: Pet, viewModel: MyPetViewModel) {
     var showDialog by remember { mutableStateOf(false) }
 
-    InfoCard(title = "🏃 Lifestyle") {
+    InfoCard(title = "🏃 Lifestyle", backgroundColor = Color(0xFFFFF9C4)) { // light yellow
         Text("Exercise Routine: ${pet.lifestyle.exerciseRoutine.ifBlank { "Not set" }}")
         Text("Diet: ${pet.lifestyle.diet.ifBlank { "Not set" }}")
 
@@ -217,9 +220,8 @@ fun LifestyleCard(pet: Pet, viewModel: MyPetViewModel) {
             initial = pet.lifestyle,
             onDismiss = { showDialog = false },
             onSave = { updatedLifestyle ->
-                // Create a new Pet object with updated Lifestyle
                 val updatedPet = pet.copy(lifestyle = updatedLifestyle)
-                viewModel.updatePet(updatedPet)  // call the ViewModel
+                viewModel.updatePet(updatedPet)
                 showDialog = false
             }
         )
@@ -228,20 +230,17 @@ fun LifestyleCard(pet: Pet, viewModel: MyPetViewModel) {
     Spacer(Modifier.height(8.dp))
 }
 
-
-
 @Composable
 fun HistoryCard(pet: Pet, viewModel: MyPetViewModel) {
     var showDialog by remember { mutableStateOf(false) }
 
-    InfoCard(title = "📜 History") {
+    InfoCard(title = "📜 History", backgroundColor = Color(0xFFFFE0B2)) { // light orange
         Text("Medical History: ${pet.history.medicalHistory.ifBlank { "None" }}")
         Text("Vaccination History: ${pet.history.vaccinationHistory.ifBlank { "None" }}")
 
         Spacer(Modifier.height(8.dp))
         Row {
-            Button(onClick = { showDialog = true }) { Text("Edit")
-                }
+            Button(onClick = { showDialog = true }) { Text("Edit") }
         }
     }
 
@@ -250,15 +249,16 @@ fun HistoryCard(pet: Pet, viewModel: MyPetViewModel) {
             initial = pet.history,
             onDismiss = { showDialog = false },
             onSave = {updatedHistory ->
-                // Create a new Pet object with updated History
                 val updatedPet = pet.copy(history = updatedHistory)
-                viewModel.updatePet(updatedPet)  // call the ViewModel
+                viewModel.updatePet(updatedPet)
                 showDialog = false
             }
         )
     }
+
     Spacer(Modifier.height(8.dp))
 }
+
 
 
 @Composable
@@ -357,16 +357,29 @@ fun HistoryDialog(
 @Composable
 fun InfoCard(
     title: String,
+    backgroundColor: Color = Color(0xFFF5F5F5), // Light gray as default for inner cards
+    borderWidth: Dp = 1.dp,
+    borderColor: Color = Color.Black,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 4.dp)
+            .background(backgroundColor),  // card background
+
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+        Column(modifier = Modifier
+            .padding(12.dp)
+            .background(backgroundColor) // ensure column background matches
+        ) {
+            Text(
+                title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
             Spacer(modifier = Modifier.height(6.dp))
             content()
         }
