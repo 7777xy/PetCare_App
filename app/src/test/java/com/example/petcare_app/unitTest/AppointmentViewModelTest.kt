@@ -1,4 +1,4 @@
-package com.example.petcare_app
+package com.example.petcare_app.unitTest
 
 import android.util.Log
 import com.example.petcare_app.data.AppDatabase

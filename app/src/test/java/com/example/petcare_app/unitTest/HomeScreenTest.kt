@@ -1,4 +1,4 @@
-package com.example.petcare_app
+package com.example.petcare_app.unitTest
 
 import androidx.navigation.NavHostController
 import org.junit.Test

@@ -1,4 +1,4 @@
-package com.example.petcare_app
+package com.example.petcare_app.unitTest
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
