@@ -18,7 +18,7 @@ import org.junit.Rule
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class MyPetViewModelTest {
+class MyPetUnitTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()

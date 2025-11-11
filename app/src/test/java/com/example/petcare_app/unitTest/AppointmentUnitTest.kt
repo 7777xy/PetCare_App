@@ -15,7 +15,7 @@ import org.junit.Rule
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class AppointmentViewModelTest {
+class AppointmentUnitTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
@@ -43,7 +43,7 @@ class AppointmentViewModelTest {
             vetName = "Dr. Lee",
             clinicName = "Happy Pets",
             address = "123 Pet Street",
-            date = "2025-11-07",
+            date = "2025-12-31", // Only when the date before this date, the upcomingVetAppointment will have value
             time = "10:00"
         )
 
@@ -68,7 +68,7 @@ class AppointmentViewModelTest {
             vetName = "Dr. Lee",
             clinicName = "Happy Pets",
             address = "123 Pet Street",
-            date = "2025-11-07",
+            date = "2025-12-31",
             time = "10:00"
         )
         val completedApptEntity = appt.copy(completed = true).toAppointmentEntity()
@@ -95,7 +95,7 @@ class AppointmentViewModelTest {
             vetName = "Dr. Lee",
             clinicName = "Happy Pets",
             address = "123 Pet Street",
-            date = "2025-11-07",
+            date = "2025-12-31", // Only when the date before this date, the upcomingVetAppointment will have value
             time = "10:00"
         )
         val updatedAppt = originalAppt.copy(vetName = "Dr. Wang")
@@ -121,7 +121,7 @@ class AppointmentViewModelTest {
             vetName = "Dr. Lee",
             clinicName = "Happy Pets",
             address = "123 Pet Street",
-            date = "2025-11-07",
+            date = "2025-12-31",
             time = "10:00"
         )
 

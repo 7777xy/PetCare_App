@@ -15,7 +15,7 @@ import org.junit.Test
 import android.util.Log
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class ReminderViewModelTest {
+class ReminderUnitTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
@@ -40,7 +40,8 @@ class ReminderViewModelTest {
     @Test
     fun testAddReminder() = runTest {
         // Arrange
-        val reminder = Reminder(1, "Sleep", "2025-11-07 10:00", false)
+        val reminder = Reminder(1, "Sleep",
+            "2025-12-31 10:00", false) // Only when the date before this date, the upcomingReminder will have value
         // 1. Initial state is an empty list.
         // 2. After adding, the list contains the new reminder.
         coEvery { mockDao.getAll() } returns emptyList() andThen listOf(reminder.toReminderEntity())
@@ -61,7 +62,7 @@ class ReminderViewModelTest {
     @Test
     fun testMarkCompleted() = runTest {
         // Arrange
-        val reminder = Reminder(1, "Sleep", "2025-11-07 10:00", false)
+        val reminder = Reminder(1, "Sleep", "2025-12-31 10:00", false)
         val completedReminderEntity = reminder.copy(completed = true).toReminderEntity()
 
         // 1. Initial state: The upcoming reminder exists.
@@ -85,7 +86,8 @@ class ReminderViewModelTest {
     @Test
     fun testUpdateReminder() = runTest {
         // Arrange
-        val originalReminder = Reminder(1, "Sleep", "2025-11-07 10:00", false)
+        val originalReminder = Reminder(1, "Sleep",
+            "2025-12-31 10:00", false) // Only when the date before this date, the upcomingReminder will have value
         val updatedReminder = originalReminder.copy(title = "Eat")
 
         // 1. Initial state: The original reminder exists.
@@ -108,7 +110,7 @@ class ReminderViewModelTest {
     @Test
     fun testDeleteReminder() = runTest {
         // Arrange
-        val reminder = Reminder(1, "Sleep", "2025-11-07 10:00", false)
+        val reminder = Reminder(1, "Sleep", "2025-12-31 10:00", false)
 
         // 1. Initial state: The reminder exists.
         // 2. After deletion: The list is empty.

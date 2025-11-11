@@ -34,7 +34,8 @@ class ReminderIntegrationTest {
 
     @Test
     fun testAddAppointment() = runBlocking {
-        val reminder = Reminder(1, "Sleep", "2025-11-07 10:00", false)
+        val reminder = Reminder(1, "Sleep",
+            "2025-12-31 10:00", false) // Only when the date before this date, the upcomingReminder will have value
 
         viewModel.addReminder(reminder)
 
@@ -48,7 +49,7 @@ class ReminderIntegrationTest {
 
     @Test
     fun testMarkCompleted() = runBlocking {
-        val reminder = Reminder(1, "Sleep", "2025-11-07 10:00", false)
+        val reminder = Reminder(1, "Sleep", "2025-12-31 10:00", false)
 
         viewModel.addReminder(reminder)
 
@@ -68,7 +69,8 @@ class ReminderIntegrationTest {
 
     @Test
     fun testUpdateAppointment() = runBlocking {
-        val originReminder = Reminder(1, "Sleep", "2025-11-07 10:00", false)
+        val originReminder = Reminder(1, "Sleep",
+            "2025-12-31 10:00", false) // Only when the date before this date, the upcomingReminder will have value
 
         viewModel.addReminder(originReminder)
         kotlinx.coroutines.delay(100)
@@ -83,7 +85,7 @@ class ReminderIntegrationTest {
 
     @Test
     fun testDeleteAppointment() = runBlocking {
-        val reminder = Reminder(1, "Sleep", "2025-11-07 10:00", false)
+        val reminder = Reminder(1, "Sleep", "2025-12-31 10:00", false)
 
         viewModel.addReminder(reminder)
         kotlinx.coroutines.delay(100)

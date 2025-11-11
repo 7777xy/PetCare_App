@@ -40,7 +40,7 @@ class AppointmentIntegrationTest {
             vetName = "Dr. Lee",
             clinicName = "Happy Pets",
             address = "123 Pet Street",
-            date = "2025-11-07",
+            date = "2025-12-31", // Only when the date before this date, the upcomingVetAppointment will have value
             time = "10:00",
             completed = false
         )
@@ -63,7 +63,7 @@ class AppointmentIntegrationTest {
             vetName = "Dr. Lee",
             clinicName = "Happy Pets",
             address = "123 Pet Street",
-            date = "2025-11-07",
+            date = "2025-12-31",
             time = "10:00",
             completed = false
         )
@@ -92,7 +92,7 @@ class AppointmentIntegrationTest {
             vetName = "Dr. Lee",
             clinicName = "Happy Pets",
             address = "123 Pet Street",
-            date = "2025-11-07",
+            date = "2025-12-31", // Only when the date before this date, the upcomingVetAppointment will have value
             time = "10:00",
             completed = false
         )
@@ -116,7 +116,7 @@ class AppointmentIntegrationTest {
             vetName = "Dr. Lee",
             clinicName = "Happy Pets",
             address = "123 Pet Street",
-            date = "2025-11-07",
+            date = "2025-12-31",
             time = "10:00",
             completed = false
         )
