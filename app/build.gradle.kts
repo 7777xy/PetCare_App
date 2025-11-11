@@ -79,6 +79,9 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.7.0")
     debugImplementation("androidx.compose.ui:ui-tooling:1.7.0")
     debugImplementation("androidx.compose.ui:ui-test-manifest:1.7.0")
+
+    // Navigation testing
+    androidTestImplementation("androidx.navigation:navigation-testing:2.7.3")
 }
 
 

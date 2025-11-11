@@ -15,51 +15,51 @@ import com.example.petcare_app.ui.screens.Appointment
 import java.text.SimpleDateFormat
 import java.util.*
 
-class AppointmentViewModel(private val db: AppDatabase) : ViewModel() {
+open class AppointmentViewModel(private val db: AppDatabase? = null) : ViewModel() {
 
     // Vet
-    var upcomingVetAppointments by mutableStateOf(listOf<Appointment>())
+    open var upcomingVetAppointments by mutableStateOf(listOf<Appointment>())
         private set
-    var pastVetAppointments by mutableStateOf(listOf<Appointment>())
+    open var pastVetAppointments by mutableStateOf(listOf<Appointment>())
         private set
 
     // Vaccine
-    var upcomingVaccineAppointments by mutableStateOf(listOf<Appointment>())
+    open var upcomingVaccineAppointments by mutableStateOf(listOf<Appointment>())
         private set
-    var pastVaccineAppointments by mutableStateOf(listOf<Appointment>())
+    open var pastVaccineAppointments by mutableStateOf(listOf<Appointment>())
         private set
 
     // History
-    var completedAppointments by mutableStateOf(listOf<Appointment>())
+    open var completedAppointments by mutableStateOf(listOf<Appointment>())
         private set
 
     init {
         viewModelScope.launch { refreshAppointments() }
     }
 
-    fun addAppointment(newAppointment: Appointment) {
+    open fun addAppointment(newAppointment: Appointment) {
         viewModelScope.launch {
-            db.appointmentDao().insert(newAppointment.toAppointmentEntity())
+            db?.appointmentDao()?.insert(newAppointment.toAppointmentEntity())
             refreshAppointments()
         }
     }
 
-    fun updateAppointment(updatedAppointment: Appointment) {
+    open fun updateAppointment(updatedAppointment: Appointment) {
         viewModelScope.launch {
-            db.appointmentDao().update(updatedAppointment.toAppointmentEntity())
+            db?.appointmentDao()?.update(updatedAppointment.toAppointmentEntity())
             refreshAppointments()
         }
     }
 
-    fun deleteAppointment(appointment: Appointment) {
+    open fun deleteAppointment(appointment: Appointment) {
         viewModelScope.launch {
-            db.appointmentDao().delete(appointment.toAppointmentEntity())
+            db?.appointmentDao()?.delete(appointment.toAppointmentEntity())
             refreshAppointments()
         }
     }
 
     private suspend fun refreshAppointments() {
-        val all = db.appointmentDao().getAll().map { it.toAppointment() }
+        val all = db?.appointmentDao()?.getAll()?.map { it.toAppointment() } ?: emptyList()
         val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
         sdf.timeZone = TimeZone.getDefault()
         val nowMs = System.currentTimeMillis()
@@ -96,7 +96,6 @@ class AppointmentViewModel(private val db: AppDatabase) : ViewModel() {
             }
         }
 
-        // Update state on Main dispatcher and create new list instances to ensure recomposition
         withContext(Dispatchers.Main) {
             upcomingVetAppointments = upcomingVet.sortedBy { it.date }.toList()
             pastVetAppointments = pastVet.sortedBy { it.date }.toList()
@@ -106,15 +105,13 @@ class AppointmentViewModel(private val db: AppDatabase) : ViewModel() {
         }
     }
 
-    fun markAppointmentCompleted(appointment: Appointment) {
+    open fun markAppointmentCompleted(appointment: Appointment) {
         android.util.Log.d("AppointmentViewModel", "markAppointmentCompleted called: ${appointment.vetName}, completed: ${appointment.completed}")
         viewModelScope.launch {
-            db.appointmentDao().update(appointment.toAppointmentEntity())
+            db?.appointmentDao()?.update(appointment.toAppointmentEntity())
             android.util.Log.d("AppointmentViewModel", "Appointment updated in DB, refreshing list...")
             refreshAppointments()
             android.util.Log.d("AppointmentViewModel", "List refreshed.")
         }
     }
-
-
 }
