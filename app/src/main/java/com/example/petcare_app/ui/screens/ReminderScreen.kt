@@ -128,7 +128,7 @@ fun ReminderScreen(navController: NavHostController, viewModel: ReminderViewMode
                             Text(
                                 text = "Past",
                                 style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.secondary
+                                color = MaterialTheme.colorScheme.primary
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                         }
@@ -191,23 +191,35 @@ fun ReminderItem(
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            // Text column takes up remaining space, wraps text
+            Column(
+                modifier = Modifier.weight(1f) // <-- ensures column takes available space but allows wrapping
+            ) {
                 Text(
                     text = reminder.title,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                    textDecoration = if (reminder.completed) TextDecoration.LineThrough else TextDecoration.None
+                    textDecoration = if (reminder.completed) TextDecoration.LineThrough else TextDecoration.None,
+                    maxLines = 3, // optional: limit max lines
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = reminder.date,
                     style = MaterialTheme.typography.bodyLarge,
-                    textDecoration = if (reminder.completed) TextDecoration.LineThrough else TextDecoration.None
+                    textDecoration = if (reminder.completed) TextDecoration.LineThrough else TextDecoration.None,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
+
+            // Icons column (fixed width)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 Checkbox(
                     checked = reminder.completed,
                     onCheckedChange = { onCompletedChange(it) }

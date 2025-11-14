@@ -17,12 +17,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavHostController
 import com.example.petcare_app.viewmodel.MyPetViewModel
-
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 
 data class Pet(
     val id: Int,
@@ -205,7 +202,7 @@ fun BasicInfoCard(pet: Pet, viewModel: MyPetViewModel) {
 fun LifestyleCard(pet: Pet, viewModel: MyPetViewModel) {
     var showDialog by remember { mutableStateOf(false) }
 
-    InfoCard(title = "🏃 Lifestyle", backgroundColor = Color(0xFFFFF9C4)) { // light yellow
+    InfoCard(title = "🏃 Lifestyle Objective", backgroundColor = Color(0xFFE0F7FA)) { // light yellow
         Text("Exercise Routine: ${pet.lifestyle.exerciseRoutine.ifBlank { "Not set" }}")
         Text("Diet: ${pet.lifestyle.diet.ifBlank { "Not set" }}")
 
@@ -234,7 +231,7 @@ fun LifestyleCard(pet: Pet, viewModel: MyPetViewModel) {
 fun HistoryCard(pet: Pet, viewModel: MyPetViewModel) {
     var showDialog by remember { mutableStateOf(false) }
 
-    InfoCard(title = "📜 History", backgroundColor = Color(0xFFFFE0B2)) { // light orange
+    InfoCard(title = "📜 History", backgroundColor = Color(0xFFE0F7FA)) { // light orange
         Text("Medical History: ${pet.history.medicalHistory.ifBlank { "None" }}")
         Text("Vaccination History: ${pet.history.vaccinationHistory.ifBlank { "None" }}")
 

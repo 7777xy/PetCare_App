@@ -22,6 +22,7 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.widget.DatePicker
 import android.widget.TimePicker
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.filled.Phone
 import com.example.petcare_app.data.ReminderEntity
 import com.example.petcare_app.viewmodel.ReminderViewModel
@@ -81,14 +82,17 @@ fun AppointmentScreen(navController: NavHostController, viewModel: AppointmentVi
                 .padding(padding)
                 .padding(16.dp)
                 .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(bottom = 16.dp)
         ) {
             if (upcomingVet.isEmpty() && pastVet.isEmpty() &&
                 upcomingVaccine.isEmpty() && pastVaccine.isEmpty()
             ) {
                 item {
                     Box(
-                        modifier = Modifier.fillParentMaxSize(),
+                        modifier = Modifier
+                            .fillParentMaxSize()
+                            .padding(16.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text("No appointments yet. Tap + to add one.")
@@ -110,6 +114,7 @@ fun AppointmentScreen(navController: NavHostController, viewModel: AppointmentVi
                             }
                         )
                     }
+                    item { Spacer(modifier = Modifier.height(10.dp)) }
                 }
 
                 if (pastVet.isNotEmpty()) {
@@ -126,6 +131,7 @@ fun AppointmentScreen(navController: NavHostController, viewModel: AppointmentVi
                             }
                         )
                     }
+                    item { Spacer(modifier = Modifier.height(10.dp)) }
                 }
 
                 // --- Vaccine Appointments ---
@@ -143,6 +149,7 @@ fun AppointmentScreen(navController: NavHostController, viewModel: AppointmentVi
                             }
                         )
                     }
+                    item { Spacer(modifier = Modifier.height(10.dp)) }
                 }
 
                 if (pastVaccine.isNotEmpty()) {
@@ -159,6 +166,7 @@ fun AppointmentScreen(navController: NavHostController, viewModel: AppointmentVi
                             }
                         )
                     }
+                    item { Spacer(modifier = Modifier.height(10.dp)) }
                 }
             }
         }
@@ -188,7 +196,6 @@ fun SectionTitle(title: String) {
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.primary
         )
-        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 
@@ -256,7 +263,7 @@ fun AppointmentCard(
                         Icon(Icons.Default.Phone, contentDescription = "Contact Staff")
                     }
                     IconButton(onClick = { onEdit(appointment) }) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                        Icon(Icons.Default.Edit, contentDescription = "Edit Appointment ${appointment.id}")
                     }
                     IconButton(onClick = { onDelete(appointment) }) {
                         Icon(Icons.Default.Delete, contentDescription = "Delete")
