@@ -4,7 +4,7 @@ A multifunctional and comprehensive Android app built with **Kotlin**, designed 
 
 ---
 
-## Navigation
+## Navigation (Screens)
 
 - **Home**: Overview of upcoming appointments, reminders, and pet tips.  
 - **My Pets**: Add, edit, and view pet profiles along with lifestyle data (exercise routines & diet) and health history.
@@ -31,6 +31,7 @@ All application data are stored locally using the Room Database. Room provides a
 - **Pet Dao, Appointment Dao & Reminder Dao**: Data Access Objects (DAO) that define SQL queries and database operations (insert, update, delete, retrieve) for each data type.
 - **Pet Entity, Appointment Entity & Reminder Entity**: Entity classes that represent the tables in the Room database. Each entity defines the schema for its respective data model.
 - **Pet Extensions, Appointment Extensions & Reminder Extensions**: Extension functions used to convert between database entities and UI/domain models, ensuring clean separation between storage representation and app logic.
+- **MyPet ViewModel, Appointment Viewmodel & Reminder ViewModel**: These ViewModels manage the core data and business logic for their respective screens. They handle data retrieval, insertion, updates, and communication with the Room database through the Repository layer. Each ViewModel exposes reactive UI states to ensure that changes in the underlying data are immediately reflected in the UI, improving both performance and user experience.
 
 
 ## Tests
